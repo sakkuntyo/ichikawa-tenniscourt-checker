@@ -4,6 +4,10 @@ const { setTimeout } = require('timers/promises');
 const tabletojson = require('tabletojson').Tabletojson;
 const cheerio = require('cheerio');
 
+//line
+const axios = require('axios');
+const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).lineNotifyToken;
+
 (async () => {
   const browser = await puppeteer.launch({
     args: ['--no-sandbox'],
