@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const { setTimeout } = require('timers/promises');
+const tabletojson = require('tabletojson').Tabletojson;
 
 (async () => {
 	  const browser = await puppeteer.launch({
@@ -8,28 +9,59 @@ const { setTimeout } = require('timers/promises');
 	  });
 	  const page = await browser.newPage();
 	  await page.goto('https://funayoyaku.city.funabashi.chiba.jp/web/index.jsp');
-	  /*
-	  client = await page.target().createCDPSession();
-	  client.send('Page.setDownloadBehavior', {
-            behavior: 'allow', // ダウンロードを許可
-            downloadPath: './', // ダウンロード先のフォルダを指定
-          });
-	  */
-	  await page.setViewport({
-		    width: 1000,
-		    height: 2000,
-		    deviceScaleFactor: 1,
-	  });
-          //await page.$eval('div[class="FlexTextarea__dummy"]', element => element.value = '');
-	  //await page.type('div[class="FlexTextarea__dummy"]',"testtest")
-	  await page.screenshot({path: 'example.png'});
-	  //await page.click('button[type="button"]');
-	  
+	//
 	  await Promise.all([
-		  await setTimeout(10000)
+		  await setTimeout(1000)
+	  ]);
+
+	  await page.type('input[id="userId"]',"")
+	  await Promise.all([
+		  await setTimeout(1000)
+	  ]);
+
+	  await page.type('input[id="password"]',"")
+	  await Promise.all([
+		  await setTimeout(1000)
+	  ]);
+
+	  await page.screenshot({path: 'example.png'});
+	  await Promise.all([
+		  await setTimeout(1000)
+	  ]);
+
+	  await page.click('img[src="image/bw_login.gif"]');
+	  await Promise.all([
+		  await setTimeout(1000)
+	  ]);
+
+	  await page.click('img[src="image/bw_rsvapply.gif"]');
+	  await Promise.all([
+		  await setTimeout(1000)
+	  ]);
+
+	  await page.click('img[src="image/bw_fromusepurpose.gif"]');
+	  await Promise.all([
+		  await setTimeout(1000)
+	  ]);
+
+	  await (await page.$x(`//a[text() = "テニス"]`))[0].click();
+	  await Promise.all([
+		  await setTimeout(1000)
+	  ]);
+
+	  console.dir(await(await ((await page.$x(`//a[text() = "ふなばし三番瀬海浜公園"]`))[0]).getProperty('innerHTML')).jsonValue());
+	  await (await page.$x(`//a[text() = "ふなばし三番瀬海浜公園"]`))[0].click();
+	  await Promise.all([
+		  await setTimeout(1000)
+	  ]);
+
+	  const tabledata = await page.evaluate(() => document.querySelector('table[class="m_akitablelist"]').outerHTML)
+	  console.dir(tabledata);
+	  const tabledata_json = tabletojson.convert(tabledata,{stripHtmlFromCells:false})
+	  console.dir(tabledata_json)
+	  await Promise.all([
+		  await setTimeout(1000)
 	  ]);
 	  
-	  await page.screenshot({path: 'example2.png'});
-
 	  await browser.close();
 })();
