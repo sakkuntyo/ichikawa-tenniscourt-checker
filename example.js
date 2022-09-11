@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 const { setTimeout } = require('timers/promises');
 const tabletojson = require('tabletojson').Tabletojson;
+
 
 (async () => {
 	  const browser = await puppeteer.launch({
@@ -14,12 +16,12 @@ const tabletojson = require('tabletojson').Tabletojson;
 		  await setTimeout(1000)
 	  ]);
 
-	  await page.type('input[id="userId"]',"")
+	  await page.type('input[id="userId"]',JSON.parse(fs.readFileSync("./settings.json", "utf8")).userid);
 	  await Promise.all([
 		  await setTimeout(1000)
 	  ]);
 
-	  await page.type('input[id="password"]',"")
+	  await page.type('input[id="password"]',JSON.parse(fs.readFileSync("./settings.json", "utf8")).password);
 	  await Promise.all([
 		  await setTimeout(1000)
 	  ]);
