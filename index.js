@@ -10,53 +10,59 @@ const querystring = require('querystring');
 const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).lineNotifyToken;
 
 (async () => {
-  const browser = await puppeteer.launch({
-    args: ['--no-sandbox'],
-    //headless: false
-  });
-  const page = await browser.newPage();
-  await page.goto('https://funayoyaku.city.funabashi.chiba.jp/web/index.jsp');
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  await page.type('input[id="userId"]',JSON.parse(fs.readFileSync("./settings.json", "utf8")).userid);
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  await page.type('input[id="password"]',JSON.parse(fs.readFileSync("./settings.json", "utf8")).password);
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  await page.screenshot({path: 'example.png'});
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  await page.click('img[src="image/bw_login.gif"]');
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  await page.click('img[src="image/bw_rsvapply.gif"]');
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  await page.click('img[src="image/bw_fromusepurpose.gif"]');
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  await (await page.$x(`//a[text() = "テニス"]`))[0].click();
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  await (await page.$x(`//a[text() = "ふなばし三番瀬海浜公園"]`))[0].click();
-  await page.waitForFunction(()=> document.readyState === "complete");  
-  
-  //aki syutoku syori
-  var akiarray = await akisyutoku(page)
-
-  await page.click('img[alt="次の月"]');
-  await page.waitForFunction(()=> document.readyState === "complete");  
-
-  //aki syutoku syori
-  akiarray = akiarray.concat(await akisyutoku(page));
-  if(akiarray.length){
-    const myLine = new Line();
-    myLine.setToken(lineNotifyToken);
-    myLine.notify(JSON.stringify(akiarray).toString());
+  while(true){
+    try{
+      const browser = await puppeteer.launch({
+        args: ['--no-sandbox'],
+        //headless: false
+      });
+      const page = await browser.newPage();
+      await page.goto('https://funayoyaku.city.funabashi.chiba.jp/web/index.jsp');
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      await page.type('input[id="userId"]',JSON.parse(fs.readFileSync("./settings.json", "utf8")).userid);
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      await page.type('input[id="password"]',JSON.parse(fs.readFileSync("./settings.json", "utf8")).password);
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      await page.screenshot({path: 'example.png'});
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      await page.click('img[src="image/bw_login.gif"]');
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      await page.click('img[src="image/bw_rsvapply.gif"]');
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      await page.click('img[src="image/bw_fromusepurpose.gif"]');
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      await (await page.$x(`//a[text() = "テニス"]`))[0].click();
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      await (await page.$x(`//a[text() = "ふなばし三番瀬海浜公園"]`))[0].click();
+      await page.waitForFunction(()=> document.readyState === "complete");  
+      
+      //aki syutoku syori
+      var akiarray = await akisyutoku(page)
+    
+      await page.click('img[alt="次の月"]');
+      await page.waitForFunction(()=> document.readyState === "complete");  
+    
+      //aki syutoku syori
+      akiarray = akiarray.concat(await akisyutoku(page));
+      if(akiarray.length){
+        const myLine = new Line();
+        myLine.setToken(lineNotifyToken);
+        myLine.notify(JSON.stringify(akiarray).toString());
+      }
+      
+      await browser.close();
+      await setTimeout(60000);
+    } catch {
+    }
   }
-  
-  await browser.close();
 })();
 
 const akisyutoku = async function(page){
@@ -98,10 +104,10 @@ const akisyutoku = async function(page){
     //  akilist.push(item["土曜日"])
     //}
     if(item["日曜日"]?.toString().match(/.*一部空き.*/)){
-      arrayvar.push(item["日曜日"])
+      akilist.push(item["日曜日"])
     }
     if(item["土曜日"]?.toString().match(/.*一部空き.*/)){
-      arrayvar.push(item["土曜日"])
+      akilist.push(item["土曜日"])
     }
   })
   console.log("akinomi syutoku -------------")
