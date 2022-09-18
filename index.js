@@ -11,11 +11,11 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).l
 
 (async () => {
   while(true){
+    const browser = await puppeteer.launch({
+      args: ['--no-sandbox'],
+      headless: false
+    });
     try{
-      const browser = await puppeteer.launch({
-        args: ['--no-sandbox'],
-        //headless: false
-      });
       const page = await browser.newPage();
       await page.goto('https://funayoyaku.city.funabashi.chiba.jp/web/index.jsp');
       await page.waitForFunction(()=> document.readyState === "complete");  
@@ -73,6 +73,7 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).l
     } catch(error) {
       console.log("catched" + error)
       console.error(error)
+      await browser.close();
     }
   }
 })();
