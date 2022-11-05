@@ -7,7 +7,7 @@ const cheerio = require('cheerio');
 //line
 const axios = require('axios');
 const querystring = require('querystring');
-const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).lineNotifyToken;
+const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).sanbanseLineNotifyToken;
 
 (async () => {
   while(true){
@@ -52,19 +52,19 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).l
       //aki syutoku syori
       akiarray = akiarray.concat(await akisyutoku(page));
       if(akiarray.length){
-        if(fs.existsSync("/tmp/funabashi-court-previous.txt")){
-          const previous = fs.readFileSync("/tmp/funabashi-court-previous.txt","UTF-8")
+        if(fs.existsSync("/tmp/sanbanse-court-previous.txt")){
+          const previous = fs.readFileSync("/tmp/sanbanse-court-previous.txt","UTF-8")
           if(previous != JSON.stringify(akiarray)){
             const myLine = new Line();
             myLine.setToken(lineNotifyToken);
             myLine.notify(JSON.stringify(akiarray).toString());
-            fs.writeFileSync("/tmp/funabashi-court-previous.txt", JSON.stringify(akiarray))
+            fs.writeFileSync("/tmp/sanbanse-court-previous.txt", JSON.stringify(akiarray))
           }
 	} else {
           const myLine = new Line();
           myLine.setToken(lineNotifyToken);
           myLine.notify(JSON.stringify(akiarray).toString());
-          fs.writeFileSync("/tmp/funabashi-court-previous.txt", JSON.stringify(akiarray))
+          fs.writeFileSync("/tmp/sanbanse-court-previous.txt", JSON.stringify(akiarray))
 	}
       }
       
