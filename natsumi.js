@@ -12,8 +12,8 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).n
 (async () => {
   while(true){
     const browser = await puppeteer.launch({
-      args: ['--no-sandbox'],
-      headless: false
+      args: ['--no-sandbox']//,
+      //headless: false
     });
     try{
       const page = await browser.newPage();
