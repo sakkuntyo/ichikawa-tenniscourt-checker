@@ -134,7 +134,7 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).k
 	}
       }
       await browser.close();
-      await setTimeout(10000);
+      await setTimeout(60000);
     } catch(error) {
       console.log("catched" + error)
       console.error(error)
