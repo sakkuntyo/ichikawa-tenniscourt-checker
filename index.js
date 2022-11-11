@@ -1,3 +1,4 @@
+require('date-utils');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const { setTimeout } = require('timers/promises');
@@ -8,6 +9,8 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const querystring = require('querystring');
 const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).lineNotifyToken;
+
+const kakoyoyakuList = [];
 
 (async () => {
   while(true){
@@ -71,6 +74,9 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).l
       await page.click('input[value="1ヶ月"]');
       await page.waitForFunction(()=> document.readyState === "complete");
 
+      //await page.click('input[value="月"]');//テスト用
+      //await page.waitForFunction(()=> document.readyState === "complete");
+
       await page.click('input[value="土"]');
       await page.waitForFunction(()=> document.readyState === "complete");
 
@@ -82,55 +88,65 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).l
 
       await page.click('input[value="次へ >>"]');
       await page.waitForFunction(()=> document.readyState === "complete");
-
-      // 不要な行削除
-      await page.$$eval('tr[class="TitleColor"]',els => els.forEach(el => el.remove()));
-      await page.$$eval('table[id="TableFoot"]',els => els.forEach(el => el.remove()));
-      const tabledata = await page.evaluate(() => document.querySelector('table[id*="tpItem_Table1"]').outerHTML)
-      const tabledata_json = tabletojson.convert(tabledata,{stripHtmlFromCells:false})[0]
-      // コート名
-      const courtname = cheerio.load(tabledata_json[0]["0"]).text().trim().trim().replace(/\s.*/g,'')
-      // 空き状況
-      //console.log(JSON.stringify(tabledata_json[2],null,2))
-      // 値の配列
-      const valuesArray = []
-      Object.values(tabledata_json[2]).forEach(value => {
-        if(value.match(/○/) || value.match(/×/) || value.match(/△/)) {
-          valuesArray.push(value)
-	}
-      })
-      // 日付とステータス(○☓△)配列
-      const dateAndAvailabilityArray = []
-      valuesArray.forEach((value) => {
-	date = value.replace(/\n/g,"").replace(/.*([0-9]{8}).*/g,"$1")
-	availability = value.replace(/\n/g,"").replace(/.*([○×△]).*/g,"$1")
-        dateAndAvailabilityArray.push(date + "," + availability)
-      })
-      // 日付とステータス(○☓△)から△と○のみ抽出した配列
-      const akiarray = []
-      dateAndAvailabilityArray.forEach((value) => {
-        if(value.match(/[○△]/)){
-          akiarray.push(value.replace(/.*([0-9]{8}).*/g,"$1"))
-	}
-      })
       
-      // 通知
-      if(akiarray.length){
-        if(fs.existsSync("/tmp/konodai-court-previous.txt")){
-          const previous = fs.readFileSync("/tmp/konodai-court-previous.txt","UTF-8")
-          if(previous != JSON.stringify(akiarray)){
-            const myLine = new Line();
-            myLine.setToken(lineNotifyToken);
-            myLine.notify(JSON.stringify(akiarray).toString());
-            fs.writeFileSync("/tmp/konodai-court-previous.txt", JSON.stringify(akiarray))
-          }
-	} else {
-          const myLine = new Line();
-          myLine.setToken(lineNotifyToken);
-          myLine.notify(JSON.stringify(akiarray).toString());
-          fs.writeFileSync("/tmp/konodai-court-previous.txt", JSON.stringify(akiarray))
-	}
+      //次の日以降を見る
+      await page.$eval('input[name="ucTermSetting$txtDateFrom"]',element => element.value = '')
+      itinitigo = new Date((new Date()).setDate((new Date()).getDate() + 1))//今日に一日を加算した日を作成
+      await page.type('input[name="ucTermSetting$txtDateFrom"]',itinitigo.toFormat('YYYY/MM/DD'));
+      await page.click('input[value="更新"]');
+      await page.waitForFunction(()=> document.readyState === "complete");
+
+      await (await page.$x(`//a[contains(text(),"△")]`))[0].click();
+      await page.waitForFunction(()=> document.readyState === "complete");  
+
+      await page.click('input[type="submit"][value="次へ >>"]');
+      await page.waitForFunction(()=> document.readyState === "complete");
+      
+      await (await page.$x(`//a[contains(text(),"○")]`))[0].click();
+      await page.waitForFunction(()=> document.readyState === "complete");  
+
+      await page.click('input[type="submit"][value="次へ >>"]');
+      await page.waitForFunction(()=> document.readyState === "complete");
+      
+      const courtname = (await page.$eval('span[id="dlRepeat_ctl00_tpItem_lblShisetsu"]',el => el.innerText)).toString();
+      const yoyakudate = (await page.$eval('span[id="dlRepeat_ctl00_tpItem_lblDay"]',el => el.innerText)).toString();
+      const yoyakutime = (await page.$eval('span[id="dlRepeat_ctl00_tpItem_lblTime"]',el => el.innerText)).toString();
+      console.log("courtname => " + courtname)
+      console.log("yoyakudate => " + yoyakudate)
+      console.log("yoyakutime => " + yoyakutime)
+
+      //過去予約チェック
+      if(kakoyoyakuList.includes(courtname + yoyakudate + yoyakutime)){
+	console.log(courtname + yoyakudate + yoyakutime + " は過去に予約したことがあるため予約しませんでした。")
+        await browser.close();
+        await setTimeout(60000);
+        continue
       }
+
+      //予約確定操作
+      await page.click('input[type="submit"][value="申込 >>"]');
+      await page.waitForFunction(()=> document.readyState === "complete");
+
+      //予約完了チェック
+      if(!page.url().match(/YoyakuKanryou.aspx/)){
+        console.log("何らかの理由で予約に失敗しました。")
+        await browser.close();
+        await setTimeout(60000);
+        continue
+      }
+
+      //通知
+      kakoyoyakuList.push(courtname + yoyakudate + yoyakutime)
+      console.log(courtname + yoyakudate + yoyakutime)
+      const myLine = new Line();
+      myLine.setToken(lineNotifyToken);
+      myLine.notify(courtname + " の " + yoyakudate + " " + yoyakutime + " を取りました。" + "\n"
+	      + "id:" + JSON.parse(fs.readFileSync("./settings.json", "utf8")).userid + "\n"
+	      + "pass:" + JSON.parse(fs.readFileSync("./settings.json", "utf8")).password + "\n"
+	      + "url:" + "http://reserve.city.ichikawa.lg.jp/"
+      );
+
+      //終了処理
       await browser.close();
       await setTimeout(60000);
     } catch(error) {
@@ -140,69 +156,6 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).l
     }
   }
 })();
-
-const akisyutoku = async function(page){
-  //aki syutoku syori
-  //これはできない
-  //const tables = await page.evaluate(() => document.querySelectorAll('table[id*="tpItem_Table1"]'))
-  //for (const table of tables) {
-  //  console.log(table.outerHTML)
-  //}
-  await page.$eval('table[id="dlRepeat_ctl00_tpItem_Table1"]',el => el.remove());
-  const tabledata = await page.evaluate(() => document.querySelector('table[id*="tpItem_Table1"]').outerHTML)
-  const tabledata_json = tabletojson.convert(tabledata,{stripHtmlFromCells:false})
-  console.log(tabledata_json)
-//  const yearmonth = cheerio.load(tabledata_json[0][0]["日曜日"]).text()
-//  console.log(yearmonth)
-//  tabledata_json[0].shift();
-//  console.log("nengetu syutoku -------------")
-//  const data = tabledata_json[0].filter(item=>!!item).filter((item)=>{
-//    delete item["月曜日"]
-//    delete item["火曜日"]
-//    delete item["水曜日"]
-//    delete item["木曜日"]
-//    delete item["金曜日"]
-//    return item
-//  })
-//  console.log("doniti igai sakujo -------------")
-//  data.filter(item=>{
-//    if(item["土曜日"] == "&nbsp;"){
-//      delete item["土曜日"]
-//    }
-//    if(item["日曜日"] == "&nbsp;"){
-//      delete item["日曜日"]
-//    }
-//  })
-//  console.log(data)
-//  const akilist = [];
-//  console.log("hiduke nasi sakujo -------------")
-//  data.forEach(item=>{
-//    //一部空き
-//    //全て空き
-//    //予約あり
-//    //if(item["日曜日"]?.toString().match(/.*予約あり.*/)){
-//    //  akilist.push(item["日曜日"])
-//    //}
-//    //if(item["土曜日"]?.toString().match(/.*予約あり.*/)){
-//    //  akilist.push(item["土曜日"])
-//    //}
-//    if(item["日曜日"]?.toString().match(/.*一部空き.*/)){
-//      akilist.push(item["日曜日"])
-//    }
-//    if(item["土曜日"]?.toString().match(/.*一部空き.*/)){
-//      akilist.push(item["土曜日"])
-//    }
-//  })
-//  console.log("akinomi syutoku -------------")
-//  var akihidukelist = [];
-//  akilist.forEach(item=>{
-//    console.log("item->" + item)
-//    console.log("hiduke syutoku -------------")
-//    akihidukelist.push(yearmonth +  cheerio.load(item).text())
-//  })
-//  */
-  return ""
-}
 
 const Line = function () {};
 
