@@ -43,30 +43,28 @@ const lineNotifyToken = JSON.parse(fs.readFileSync("./settings.json", "utf8")).l
     
       await page.click('input[value="国府台テニスコート"]');
       await page.waitForFunction(()=> document.readyState === "complete");
-/*    
-      await page.click('input[value="塩浜市民体育館テニスコート"]');
-      await page.waitForFunction(()=> document.readyState === "complete");
-///*
-      await page.click('input[value="行徳・塩焼中央公園テニスコート"]');
-      await page.waitForFunction(()=> document.readyState === "complete");
-      await setTimeout(1000);
+
+      //浦安に近いので除外
+      //await page.click('input[value="塩浜市民体育館テニスコート"]');
+      //await page.waitForFunction(()=> document.readyState === "complete");
+
+      //駐車場がないので除外
+      //await page.click('input[value="行徳・塩焼中央公園テニスコート"]');
+      //await page.waitForFunction(()=> document.readyState === "complete");
 
       await page.click('input[value="Ｊ：ＣＯＭ北市川スポーツパーク"]');
       await page.waitForFunction(()=> document.readyState === "complete");
-      await setTimeout(1000);
 
-      await page.click('input[value="福栄スポーツ広場テニスコート"]');
-      await page.waitForFunction(()=> document.readyState === "complete");
-      await setTimeout(1000);
+      //浦安に近いので除外
+      //await page.click('input[value="福栄スポーツ広場テニスコート"]');
+      //await page.waitForFunction(()=> document.readyState === "complete");
 
       await page.click('input[value="クリーンセンターテニスコート"]');
       await page.waitForFunction(()=> document.readyState === "complete");
-      await setTimeout(1000);
 
       await page.click('input[value="菅野終末処理場テニスコート"]');
       await page.waitForFunction(()=> document.readyState === "complete");
-      await setTimeout(1000);
-  */
+
       await page.click('input[value="次へ >>"]');
       await page.waitForFunction(()=> document.readyState === "complete");
 
