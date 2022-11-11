@@ -153,6 +153,7 @@ const kakoyoyakuList = [];
       console.log("catched" + error)
       console.error(error)
       await browser.close();
+      await setTimeout(10000);
     }
   }
 })();
